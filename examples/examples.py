@@ -5,7 +5,7 @@
 import spacy
 from syntex import (
     PredicateArgumentExtractor,
-    create_default_extractor,
+    create_default_extractor_ru,
     show_structures,
     load_spacy_model
 )
@@ -16,8 +16,8 @@ def main():
 
     # Вариант 1: Использование предустановленного экстрактора
     print("=== Вариант 1: Предустановленный экстрактор ===")
-    extractor = create_default_extractor()
-    text = "Врачи стали выписывать дополнительные не нужные обследования, хотя это не помогло."
+    extractor = create_default_extractor_ru()
+    text = "Врачи стали выписывать дополнительные ненужные обследования, хотя мы сразу сказали, что на МРТ уже были ."
     show_structures(text, nlp, extractor=extractor)
 
     # Вариант 2: Создание и настройка своего экстрактора
@@ -56,18 +56,18 @@ def main():
     doc = nlp(text)
     frames = custom_extractor.extract(doc)
 
+    # Визуализация
+    show_structures(text, nlp, extractor=custom_extractor)
+
     # Вывод в JSON
     print("Результат в JSON:")
     print(custom_extractor.extract_to_json(doc))
-
-    # Визуализация
-    show_structures(text, nlp, extractor=custom_extractor)
 
     # Вариант 3: Быстрое извлечение без класса
     print("\n=== Вариант 3: Быстрое извлечение ===")
     from syntex import light_extract
 
-    frames = extract_structures(
+    frames = light_extract(
         doc,
         token_rules=custom_extractor.token_rules,
         coord_deps=['conj', 'parataxis']
@@ -76,6 +76,7 @@ def main():
         print(f"{i}. {frame['predicate_text']}")
         for arg in frame['arguments']:
             print(f"   {arg['dep']}: {arg['text']}")
+    print (frames)
 
     # Вариант 4: Английский язык
     print("\n=== Вариант 4: Английский язык ===")
