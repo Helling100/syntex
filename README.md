@@ -2,13 +2,13 @@
 
 Библиотека для гибкого извлечения предикатно-аргументных структур из текста с использованием spaCy.
 
-## Особенности
+## Функционал
 
 - **Гибкая настройка правил** для сборки составных предикатов:
-  - одиночные правила (TokenCondition)
+  - одиночные правила (TokenCondition) для обработки одного зависимого
   - групповые правила (GroupCondition) для совместной проверки нескольких зависимых
 - **Фильтрация аргументов** по типам синтаксических связей и частям речи
-- **Поддержка множественных структур** (conj, parataxis, csubj)
+- **Поддержка множественных структур** (выделение нескольких предикатно-аргументных структур)
 - **Визуализация** результатов
 - **Выход в JSON** для интеграции с другими системами
 - **Языконезависимость** (работает с любой моделью spaCy)
@@ -16,16 +16,16 @@
 ## Установка
 
 ```bash
-pip install -e .
+pip install git+https://github.com/Helling100/syntex.git
 ```
 
 # Быстрый старт
 ```python
 import spacy
-from pred_arg_extract import create_default_extractor, show_structures
+from syntex import create_default_extractor_ru, show_structures
 
 nlp = spacy.load('ru_core_news_lg')
-extractor = create_default_extractor()
+extractor = create_default_extractor_ru()
 
 text = "Врачи стали выписывать дополнительные обследования."
 show_structures(text, nlp, extractor=extractor)
@@ -41,7 +41,7 @@ print(extractor.extract_to_json(doc))
 # Настройка правил
 ## Одиночное правило
 ```python
-from pred_arg_extract import PredicateArgumentExtractor
+from syntex import PredicateArgumentExtractor
 
 extractor = PredicateArgumentExtractor()
 ```
