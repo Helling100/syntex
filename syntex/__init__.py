@@ -6,7 +6,7 @@ pred_arg_extract — библиотека для извлечения преди
 from .extractor import PredicateArgumentExtractor, light_extract
 from .conditions import TokenCondition, GroupCondition
 from .presets import create_default_extractor_ru
-from .visualize import show_structures
+from .visualize import show_structures, format_structures
 from .utils import load_spacy_model
 
 __version__ = "0.1.0"
@@ -17,5 +17,6 @@ __all__ = [
     "create_default_extractor_ru",
     "light_extract",
     "show_structures",
+    "format_structures",
     "load_spacy_model",
 ]

@@ -58,6 +58,89 @@ def show_structures(text_or_doc,
     )
     _show_frames(doc, frames, text, jupyter, show_dep_tree)
 
+def format_structures(text_or_doc,
+                      nlp=None,
+                      extractor=None,
+                      token_rules=None,
+                      group_rules=None,
+                      coord_deps=None,
+                      allowed_args=None,
+                      disallowed_args=None):
+    """
+    Форматирует извлечённые структуры в виде многострочной строки,
+    аналогичной выводу show_structures, но без печати в консоль.
+    
+    Возвращает строку, которую можно сохранить в файл.
+    """
+    from .extractor import _build_frames_for_doc
+
+    # Получаем doc
+    if isinstance(text_or_doc, str):
+        if nlp is None:
+            raise ValueError("Для текста необходимо указать nlp")
+        doc = nlp(text_or_doc)
+        text = text_or_doc
+    else:
+        doc = text_or_doc
+        text = doc.text
+
+    # Если передан extractor, используем его настройки
+    if extractor is not None:
+        frames = extractor.extract(doc)
+    else:
+        frames = _build_frames_for_doc(
+            doc,
+            token_rules=token_rules,
+            group_rules=group_rules,
+            coord_deps=coord_deps,
+            allowed_args=allowed_args,
+            disallowed_args=disallowed_args
+        )
+
+    # Формируем строку
+    lines = []
+#    lines.append(f"\n{'='*80}")
+#    lines.append(f"Текст: {text}")
+#    lines.append(f"{'='*80}\n")
+
+    if not frames:
+        lines.append("Структуры не найдены.")
+        return "\n".join(lines)
+
+    # Строим отображение корень -> индекс
+    root_to_idx = {f['root']: i for i, f in enumerate(frames)}
+    lines.append(f"Найдено структур: {len(frames)}")
+
+    for i, frame in enumerate(frames, 1):
+        pred_text = frame['predicate_text']
+        root = frame['root']
+        root_pos = frame['root_pos']
+        args = frame['arguments']
+        parent = frame['parent']
+        dep_to_parent = frame['dep_to_parent']
+
+        lines.append(f"  Структура {i}: {pred_text} (корень: {root.text}, POS: {root_pos})")
+
+        if args:
+            sorted_args = sorted(args, key=lambda a: a['tokens'][0].i if a['tokens'] else 0)
+            for arg in sorted_args:
+                lines.append(f"    {arg['dep']}: {arg['text']}")
+
+        if parent is not None:
+            lines.append("    == parent structure ==")
+            parent_idx = root_to_idx.get(parent)
+            if parent_idx is not None:
+                parent_pred_text = frames[parent_idx]['predicate_text']
+                lines.append(f"    {dep_to_parent}: {parent_pred_text} (Структура {parent_idx+1})")
+            else:
+                lines.append(f"    {dep_to_parent}: {parent.text} (неизвестная структура)")
+
+        if not args and parent is None:
+            lines.append("    (аргументов нет)")
+
+    lines.append("\n" + "="*80 + "\n")
+    return "\n".join(lines)
+
 
 def _show_frames(doc, frames, text, jupyter, show_dep_tree):
     """Внутренняя функция вывода."""
