@@ -140,7 +140,10 @@ extractor.set_arg_filters(
 extractor.set_coord_deps(['conj', 'parataxis', 'csubj'])
 ```
 
-#Формат результата
+# Формат результата
+
+*Врачи стали выписывать дополнительные обследования*
+
 ```json
 {
   "root": {"text": "стали", "lemma": "стать", "pos": "VERB"},
@@ -153,4 +156,48 @@ extractor.set_coord_deps(['conj', 'parataxis', 'csubj'])
   "parent": null,
   "dep_to_parent": null
 }
+```
+
+*Врачи осмотрели пациента и назначили лечение*
+
+```json
+
+[
+  {
+    "root": {
+      "text": "осмотрели",
+      "lemma": "осмотреть",
+      "pos": "VERB"
+    },
+    "predicate_text": "осмотрели",
+    "predicate_tokens": ["осмотрели"],
+    "arguments": [
+      {
+        "dep": "nsubj",
+        "text": "врачи"
+      },
+      {
+        "dep": "obj",
+        "text": "пациента"
+      }
+    ],
+    "parent": null,
+    "dep_to_parent": null
+  },
+  {
+    "root": {
+      "text": "назначили",
+      "lemma": "назначить",
+      "pos": "VERB"
+    },
+    "predicate_text": "назначили лечение",
+    "predicate_tokens": ["назначили", "лечение"],
+    "arguments": [],
+    "parent": {
+      "text": "осмотрели",
+      "lemma": "осмотреть"
+    },
+    "dep_to_parent": "conj"
+  }
+]
 ```
