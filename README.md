@@ -126,31 +126,3 @@ extractor.set_coord_deps(['conj', 'parataxis', 'csubj'])
   "dep_to_parent": null
 }
 ```
-
-# Лицензия
-MIT
-
-### `setup.py`
-
-```python
-from setuptools import setup, find_packages
-
-setup(
-    name="syntex",
-    version="0.1.0",
-    description="Flexible extraction of predicate-argument structures using spaCy",
-    author="Olga Babina",
-    packages=find_packages(),
-    install_requires=[
-        "spacy>=3.0.0",
-    ],
-    python_requires=">=3.7",
-    classifiers=[
-        "Programming Language :: Python :: 3",
-        "License :: OSI Approved :: MIT License",
-        "Operating System :: OS Independent",
-        "Intended Audience :: Science/Research",
-        "Topic :: Text Processing :: Linguistic",
-    ],
-)
-```
