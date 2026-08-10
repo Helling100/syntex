@@ -109,7 +109,7 @@ def format_structures(text_or_doc,
 
     # Строим отображение корень -> индекс
     root_to_idx = {f['root']: i for i, f in enumerate(frames)}
-    lines.append(f"Найдено структур: {len(frames)}")
+#    lines.append(f"Найдено структур: {len(frames)}")
 
     for i, frame in enumerate(frames, 1):
         pred_text = frame['predicate_text']
