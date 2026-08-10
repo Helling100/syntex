@@ -40,14 +40,13 @@ print(extractor.extract_to_json(doc))
 
 # Настройка правил
 ## Одиночное правило
+Включает в предикат токен с леммой 'не', если корень — глагол
+
 ```python
 from syntex import PredicateArgumentExtractor
 
 extractor = PredicateArgumentExtractor()
-```
 
-## Включить в предикат токен с леммой 'не', если корень — глагол
-```python
 extractor.add_rule([
     {'attr': 'lemma', 'value': 'не'},
     {'attr': 'root_pos', 'value': 'VERB'}
@@ -56,7 +55,11 @@ extractor.add_rule([
 
 ## Групповое правило
 ```python
-# Добавить 'хотя' и 'бы' только если они оба присутствуют
+# Добавить в текст предиката два непосредственно зависимых ('хотя' и 'бы') только если они оба присутствуют
+from syntex import PredicateArgumentExtractor
+
+extractor = PredicateArgumentExtractor()
+
 extractor.add_group_rule(
     conditions=[
         {'attr': 'lemma', 'value': 'хотя'},
