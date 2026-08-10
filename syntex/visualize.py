@@ -103,7 +103,7 @@ def _show_frames(doc, frames, text, jupyter, show_dep_tree):
                 print(f"    {arg['dep']}: {arg['text']}")
 
         if parent is not None:
-            print("    -----")
+            print("    == parent structure ==")
             parent_idx = root_to_idx.get(parent)
             if parent_idx is not None:
                 parent_pred_text = frames[parent_idx]['predicate_text']
