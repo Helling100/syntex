@@ -198,6 +198,35 @@ def _build_frames_for_doc(doc,
             'dep_to_parent': dep_to_parent
         })
 
+
+    # --- Постобработка: удаляем фреймы, чей корень входит в pred_tokens другого фрейма ---
+    # Строим словарь корень -> фрейм
+    root_to_frame = {f['root']: f for f in result}
+    merged_frames = []
+    for frame in result:
+        root = frame['root']
+        included = False
+        parent_frame = None
+        for other in result:
+            if other['root'] == root:
+                continue
+            if root in other['predicate_tokens']:
+                included = True
+                parent_frame = other
+                break
+        if included and parent_frame is not None:
+            # Переносим аргументы текущего фрейма в родительский
+            parent_frame['arguments'].extend(frame['arguments'])
+            # Не добавляем текущий фрейм в итоговый список
+            continue
+        else:
+            merged_frames.append(frame)
+    result = merged_frames
+    # Сортируем фреймы по позиции корня (опционально)
+    result.sort(key=lambda f: f['root'].i)
+
+
+
     return result
 
 
