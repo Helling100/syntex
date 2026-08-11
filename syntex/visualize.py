@@ -172,7 +172,7 @@ def format_structures(text_or_doc,
                     if head_lemma and head_pos:
                         parts.append(f"head: {head_lemma} | {head_pos}")
                     if arg_morph_str:
-                        parts.append(f", morph: {arg_morph_str}")
+                        parts.append(f"morph: {arg_morph_str}")
                     if parts:
                         arg_line += " (" + ", ".join(parts) + ")"
                 
