@@ -108,9 +108,32 @@ def _build_frames_for_doc(doc,
         pred_tokens.sort(key=lambda t: t.i)
         pred_text = " ".join(tok.text.lower() for tok in pred_tokens)
 
+
+        #Динамическая проверка допустимых отношений к атрибутом от каждого из компонентов многокомпонентного предиката, в зависимости от части речи компонента
+        def get_filters_for_head(head_token):
+            """Возвращает (allowed, disallowed) для данного токена-головы."""
+            head_pos = head_token.pos_
+            allowed = None
+            disallowed = None
+
+            if allowed_args is not None:
+                if isinstance(allowed_args, dict):
+                    allowed = allowed_args.get(head_pos)
+                elif isinstance(allowed_args, list):
+                    allowed = allowed_args
+
+            if disallowed_args is not None:
+                if isinstance(disallowed_args, dict):
+                    disallowed = disallowed_args.get(head_pos)
+                elif isinstance(disallowed_args, list):
+                    disallowed = disallowed_args
+
+            return allowed, disallowed
+
+
         # --- Сбор аргументов dep ---
         arguments = []
-
+ 
         def collect_arguments(node):
             if node in pred_tokens:
                 for child in node.children:
@@ -118,14 +141,23 @@ def _build_frames_for_doc(doc,
                 return
 
             if node.head in pred_tokens:
+                # Получаем фильтры для POS головы (которая в pred_tokens)
+                allowed, disallowed = get_filters_for_head(node.head)                
+                
                 subtree = collect_subtree(node)
                 sorted_nodes = sorted(subtree, key=lambda t: t.i)
                 filtered_nodes = [t for t in sorted_nodes if t not in pred_tokens]
                 if filtered_nodes:
                     dep = node.dep_
+                    '''
                     if final_allowed is not None and dep not in final_allowed:
                         return
                     if final_disallowed is not None and dep in final_disallowed:
+                        return
+                    '''
+                    if allowed is not None and dep not in allowed:
+                        return
+                    if disallowed is not None and dep in disallowed:
                         return
                     arg_text = " ".join(tok.text.lower() for tok in filtered_nodes)
                     arguments.append({
