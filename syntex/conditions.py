@@ -43,6 +43,19 @@ class TokenCondition:
                 actual = 'self'
             else:
                 raise ValueError(f"Unknown root attribute: {actual_attr}")
+        elif attr.startswith('morph_'):
+            morph_feature = attr[6:]  # например, 'Number', 'Tense', 'Case'
+            morph_dict = token.morph.to_dict()
+            actual = morph_dict.get(morph_feature)
+            # spaCy может возвращать список значений, поэтому преобразуем в строку
+            if isinstance(actual, list):
+                actual = '|'.join(actual)
+        elif attr.startswith('root_morph_'):
+            morph_feature = attr[11:]
+            morph_dict = root.morph.to_dict()
+            actual = morph_dict.get(morph_feature)
+            if isinstance(actual, list):
+                actual = '|'.join(actual)        
         else:
             if attr == 'dep':
                 actual = token.dep_

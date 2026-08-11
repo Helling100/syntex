@@ -68,6 +68,7 @@ def _build_frames_for_doc(doc,
 
     for root in roots:
         root_pos = root.pos_
+        root_morph = root.morph.to_dict()
 
         # --- Фильтры для аргументов ---
         final_allowed = None
@@ -160,11 +161,13 @@ def _build_frames_for_doc(doc,
                     if disallowed is not None and dep in disallowed:
                         return
                     arg_text = " ".join(tok.text.lower() for tok in filtered_nodes)
+                    arg_morph = node.morph.to_dict()
                     arguments.append({
                         'dep': dep,
                         'text': arg_text,
                         'tokens': filtered_nodes,
-                        'head': node
+                        'head': node,
+                        'morph': arg_morph
                     })
                 return
 
@@ -185,6 +188,7 @@ def _build_frames_for_doc(doc,
         result.append({
             'root': root,
             'root_pos': root_pos,
+            'root_morph': root_morph,
             'predicate_text': pred_text,
             'predicate_tokens': pred_tokens,
             'arguments': arguments,

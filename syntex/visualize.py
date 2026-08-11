@@ -58,6 +58,12 @@ def show_structures(text_or_doc,
     )
     _show_frames(doc, frames, text, jupyter, show_dep_tree)
 
+def _format_morph(morph_dict):
+    """Преобразует словарь морфологических признаков в строку вида 'Number=Plur|Case=Nom'."""
+    if not morph_dict:
+        return ""
+    return " | ".join([f"{k}={v}" for k, v in morph_dict.items()])
+
 def format_structures(text_or_doc,
                       nlp=None,
                       extractor=None,
@@ -65,7 +71,9 @@ def format_structures(text_or_doc,
                       group_rules=None,
                       coord_deps=None,
                       allowed_args=None,
-                      disallowed_args=None):
+                      disallowed_args=None,
+                      frames=None,
+                      show_morph=False):
     """
     Форматирует извлечённые структуры в виде многострочной строки,
     аналогичной выводу show_structures, но без печати в консоль.
@@ -84,6 +92,22 @@ def format_structures(text_or_doc,
         doc = text_or_doc
         text = doc.text
 
+
+    # --- Получение фреймов (если не переданы) ---
+    if frames is None:                         
+        if extractor is not None:
+            frames = extractor.extract(doc)
+        else:
+            frames = _build_frames_for_doc(
+                doc,
+                token_rules=token_rules,
+                group_rules=group_rules,
+                coord_deps=coord_deps,
+                allowed_args=allowed_args,
+                disallowed_args=disallowed_args
+            )
+
+    '''
     # Если передан extractor, используем его настройки
     if extractor is not None:
         frames = extractor.extract(doc)
@@ -96,7 +120,8 @@ def format_structures(text_or_doc,
             allowed_args=allowed_args,
             disallowed_args=disallowed_args
         )
-
+    '''
+    
     # Формируем строку
     lines = []
 #    lines.append(f"\n{'='*80}")
@@ -115,16 +140,31 @@ def format_structures(text_or_doc,
         pred_text = frame['predicate_text']
         root = frame['root']
         root_pos = frame['root_pos']
+        root_morph = frame.get('root_morph', {})
+        root_morph_str = _format_morph(root_morph)
         args = frame['arguments']
         parent = frame['parent']
         dep_to_parent = frame['dep_to_parent']
 
-        lines.append(f"  Структура {i}: {pred_text} (корень: {root.text}, POS: {root_pos}, лемма: {root.lemma_})") 
+        base_str = f"  Структура {i}: {pred_text} (корень: {root.text}, POS: {root_pos}, лемма: {root.lemma_})"
+        if show_morph and root_morph_str:
+            base_str += f", morph: {root_morph_str}"    
+        linse.append(base_str)
+        #lines.append(f"  Структура {i}: {pred_text} (корень: {root.text}, POS: {root_pos}, лемма: {root.lemma_})") 
 
         if args:
             sorted_args = sorted(args, key=lambda a: a['tokens'][0].i if a['tokens'] else 0)
+#            for arg in sorted_args:
+#                lines.append(f"    {arg['dep']}: {arg['text']}")
             for arg in sorted_args:
-                lines.append(f"    {arg['dep']}: {arg['text']}")
+                arg_text = arg['text']
+                arg_morph = arg.get('morph', {})
+                arg_morph_str = _format_morph(arg_morph)
+                arg_line = f"    {arg['dep']}: {arg_text}"
+                if show_morph and arg_morph_str:
+                    arg_line += f" (morph: {arg_morph_str})"
+                lines.append(arg_line)
+
 
         if parent is not None:
             lines.append("    == parent structure ==")
@@ -142,7 +182,7 @@ def format_structures(text_or_doc,
     return "\n".join(lines)
 
 
-def _show_frames(doc, frames, text, jupyter, show_dep_tree):
+def _show_frames(doc, frames, text, jupyter, show_dep_tree, show_morph=False):
     """Внутренняя функция вывода."""
     print(f"\n{'='*80}")
     print(f"Текст: {text}")
@@ -164,6 +204,14 @@ def _show_frames(doc, frames, text, jupyter, show_dep_tree):
                 print(f"{token.i}: {token.text} -> {token.head.text} ({token.dep_})")
 
     print("\n--- ПРЕДИКАТНО-АРГУМЕНТНЫЕ СТРУКТУРЫ ---")
+    structures_str = format_structures(
+        text_or_doc=doc,          # для текста
+        frames=frames,            # передаем уже вычисленные фреймы
+        show_morph=show_morph     # передаем флаг
+    )
+    print(structures_str)    
+    
+    '''
     if not frames:
         print("Структуры не найдены.")
         return
@@ -198,9 +246,10 @@ def _show_frames(doc, frames, text, jupyter, show_dep_tree):
 
         if not args and parent is None:
             print("    (аргументов нет)")
+      
 
     print("\n" + "="*80 + "\n")
-
+    '''
 
 def frames_to_table(frames):
     """
