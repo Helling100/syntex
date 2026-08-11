@@ -150,7 +150,7 @@ def format_structures(text_or_doc,
         base_str = f"  Структура {i}: {pred_text} (корень: {root.text}, POS: {root_pos}, лемма: {root.lemma_})"
         if show_morph and root_morph_str:
             base_str += f", morph: {root_morph_str}"    
-        linse.append(base_str)
+        lines.append(base_str)
         #lines.append(f"  Структура {i}: {pred_text} (корень: {root.text}, POS: {root_pos}, лемма: {root.lemma_})") 
 
         if args:
