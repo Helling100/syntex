@@ -16,7 +16,8 @@ def show_structures(text_or_doc,
                     allowed_args=None,
                     disallowed_args=None,
                     jupyter=True,
-                    show_dep_tree=True):
+                    show_dep_tree=True,
+                    show_morph=False):
     """
     Визуализирует синтаксическое дерево и извлечённые предикатно-аргументные структуры.
     
@@ -44,7 +45,7 @@ def show_structures(text_or_doc,
     if extractor is not None:
         frames = extractor.extract(doc)
         # Для вывода также используем настройки extractor
-        _show_frames(doc, frames, text, jupyter, show_dep_tree)
+        _show_frames(doc, frames, text, jupyter, show_dep_tree, show_morph=show_morph)
         return
 
     # Иначе используем переданные параметры
@@ -56,7 +57,7 @@ def show_structures(text_or_doc,
         allowed_args=allowed_args,
         disallowed_args=disallowed_args
     )
-    _show_frames(doc, frames, text, jupyter, show_dep_tree)
+    _show_frames(doc, frames, text, jupyter, show_dep_tree, show_morph=show_morph)
 
 def _format_morph(morph_dict):
     """Преобразует словарь морфологических признаков в строку вида 'Number=Plur|Case=Nom'."""
