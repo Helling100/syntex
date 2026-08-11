@@ -169,10 +169,10 @@ def format_structures(text_or_doc,
                 #    arg_line += f" (morph: {arg_morph_str})"
                 if show_morph:
                     parts = []
-                    if arg_morph_str:
-                        parts.append(f"morph: {arg_morph_str}")
                     if head_lemma and head_pos:
-                        parts.append(f"head: {head_lemma} ({head_pos})")
+                        parts.append(f"head: {head_lemma} | {head_pos}")
+                    if arg_morph_str:
+                        parts.append(f", morph: {arg_morph_str}")
                     if parts:
                         arg_line += " (" + ", ".join(parts) + ")"
                 
