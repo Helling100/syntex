@@ -269,6 +269,20 @@ class PredicateArgumentExtractor:
         """Возвращает результат в формате JSON."""
         import json
         frames = self.extract(doc)
+
+        # Отображение корень -> индекс
+        root_to_idx = {f['root']: i for i, f in enumerate(frames)}
+        children = {i: [] for i in range(len(frames))}
+        for idx, frame in enumerate(frames):
+            parent = frame['parent']
+            if parent is not None:
+                parent_idx = root_to_idx.get(parent)
+                if parent_idx is not None:
+                    children[parent_idx].append((idx, frame['dep_to_parent']))
+        # Добавляем children в каждый frame
+        for i, frame in enumerate(frames):
+            frame['children'] = [{'index': ci, 'dep_type': dep} for ci, dep in children[i]]
+        
         # Преобразуем токены в строки для сериализации
         for frame in frames:
             frame['root'] = {'text': frame['root'].text, 'lemma': frame['root'].lemma_, 'pos': frame['root'].pos_}
