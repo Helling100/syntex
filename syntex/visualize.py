@@ -119,7 +119,7 @@ def format_structures(text_or_doc,
         parent = frame['parent']
         dep_to_parent = frame['dep_to_parent']
 
-        lines.append(f"  Структура {i}: {pred_text} (корень: {root.text}, POS: {root_pos})")
+        lines.append(f"  Структура {i}: {pred_text} (корень: {root.text}, лемма: {root.lemma_}, POS: {root_pos})") 
 
         if args:
             sorted_args = sorted(args, key=lambda a: a['tokens'][0].i if a['tokens'] else 0)
@@ -161,7 +161,7 @@ def _show_frames(doc, frames, text, jupyter, show_dep_tree):
             for token in doc:
                 print(f"{token.i}: {token.text} -> {token.head.text} ({token.dep_})")
 
-    print("\n--- ИЗВЛЕЧЁННЫЕ ПРЕДИКАТНО-АРГУМЕНТНЫЕ СТРУКТУРЫ ---")
+    print("\n--- ПРЕДИКАТНО-АРГУМЕНТНЫЕ СТРУКТУРЫ ---")
     if not frames:
         print("Структуры не найдены.")
         return
@@ -178,7 +178,7 @@ def _show_frames(doc, frames, text, jupyter, show_dep_tree):
         parent = frame['parent']
         dep_to_parent = frame['dep_to_parent']
 
-        print(f"  Структура {i}: {pred_text} (корень: {root.text}, POS: {root_pos})")
+        print(f"  Структура {i}: {pred_text} (корень:  {root.text}, лемма: {root.lemma_}, POS: {root_pos})") #root.text
 
         if args:
             sorted_args = sorted(args, key=lambda a: a['tokens'][0].i if a['tokens'] else 0)
