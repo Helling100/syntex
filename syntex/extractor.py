@@ -167,7 +167,9 @@ def _build_frames_for_doc(doc,
                         'text': arg_text,
                         'tokens': filtered_nodes,
                         'head': node,
-                        'morph': arg_morph
+                        'morph': arg_morph,
+                        'head_lemma' : node.lemma_,
+                        'head_pos' : node.pos_
                     })
                 return
 
