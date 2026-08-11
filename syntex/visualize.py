@@ -119,7 +119,7 @@ def format_structures(text_or_doc,
         parent = frame['parent']
         dep_to_parent = frame['dep_to_parent']
 
-        lines.append(f"  Структура {i}: {pred_text} (корень: {root.text}, POS: {root_pos}), лемма: {root.lemma_}") 
+        lines.append(f"  Структура {i}: {pred_text} (корень: {root.text}, POS: {root_pos}, лемма: {root.lemma_})") 
 
         if args:
             sorted_args = sorted(args, key=lambda a: a['tokens'][0].i if a['tokens'] else 0)
@@ -180,7 +180,7 @@ def _show_frames(doc, frames, text, jupyter, show_dep_tree):
         parent = frame['parent']
         dep_to_parent = frame['dep_to_parent']
 
-        print(f"  Структура {i}: {pred_text} (корень: {root.text}, POS: {root_pos}), лемма: {root.lemma_}") 
+        print(f"  Структура {i}: {pred_text} (корень: {root.text}, POS: {root_pos}, лемма: {root.lemma_})") 
 
         if args:
             sorted_args = sorted(args, key=lambda a: a['tokens'][0].i if a['tokens'] else 0)
