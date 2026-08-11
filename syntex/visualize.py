@@ -152,7 +152,9 @@ def _show_frames(doc, frames, text, jupyter, show_dep_tree):
         print("--- ДЕРЕВО ЗАВИСИМОСТЕЙ ---")
         if jupyter:
             try:
-                displacy.render(doc, style="dep", jupyter=True, options={'distance': 100})
+                options = {"compact": True, "distance": 120}
+                displacy.render(doc, style="dep", jupyter=True, options=options)                
+                #displacy.render(doc, style="dep", jupyter=True, options={'distance': 100})
             except Exception:
                 print("(Визуализация недоступна, текстовое представление:)")
                 for token in doc:
