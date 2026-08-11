@@ -137,15 +137,26 @@ def format_structures(text_or_doc,
     root_to_idx = {f['root']: i for i, f in enumerate(frames)}
 #    lines.append(f"Найдено структур: {len(frames)}")
 
-    # строим словарь children - дочерные предикатные структуры в слотах
+    # строим словарь children - дочерные предикатные структуры в слотах, в т.ч. многокомпонентные
+    root_to_idx = {f['root']: i for i, f in enumerate(frames)}
+    root_text_to_idx = {f['root'].text: i for i, f in enumerate(frames)}
+
     children_map = {i: [] for i in range(len(frames))}
     for idx, frame in enumerate(frames):
         parent = frame['parent']
         if parent is not None:
             parent_idx = root_to_idx.get(parent)
+            if parent_idx is None:
+                parent_idx = root_text_to_idx.get(parent.text)
+            if parent_idx is None:
+                # Ищем фрейм, в predicate_tokens которого входит parent
+                for i, f in enumerate(frames):
+                    if parent in f['predicate_tokens']:
+                        parent_idx = i
+                        break
             if parent_idx is not None:
-                children_map[parent_idx].append((idx, frame['dep_to_parent']))    
-        
+                children_map[parent_idx].append((idx, frame['dep_to_parent']))        
+                
 
     for i, frame in enumerate(frames, 1):
         pred_text = frame['predicate_text']
