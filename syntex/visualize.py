@@ -147,7 +147,7 @@ def format_structures(text_or_doc,
         parent = frame['parent']
         dep_to_parent = frame['dep_to_parent']
 
-        base_str = f"  Структура {i}: {pred_text} | корень: {root.text}, POS: {root_pos}, лемма: {root.lemma_}"
+        base_str = f"  Структура {i}: {pred_text} | head: {root.text}, POS: {root_pos}, lemma: {root.lemma_}"
         if show_morph and root_morph_str:
             base_str += f", morph: {root_morph_str}"    
         lines.append(base_str)
@@ -161,8 +161,11 @@ def format_structures(text_or_doc,
                 arg_text = arg['text']
                 arg_morph = arg.get('morph', {})
                 arg_morph_str = _format_morph(arg_morph)
-                head_lemma = arg.get('head_lemma', '')
-                head_pos = arg.get('head_pos', '')
+                
+                head = arg['head']
+                head_text = head.text
+                head_lemma = head.lemma_ #arg.get('head_lemma', '')
+                head_pos = head.pos_ #arg.get('head_pos', '')
 
                 arg_line = f"    {arg['dep']}: {arg_text}"
                 #if show_morph and arg_morph_str:
@@ -170,7 +173,7 @@ def format_structures(text_or_doc,
                 if show_morph:
                     parts = []
                     if head_lemma and head_pos:
-                        parts.append(f"head: {head_lemma} | {head_pos}")
+                        parts.append(f"head: {head_text}, lemma: {head_lemma}, POS: {head_pos}")
                     if arg_morph_str:
                         parts.append(f"morph: {arg_morph_str}")
                     if parts:
