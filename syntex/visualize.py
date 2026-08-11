@@ -137,6 +137,16 @@ def format_structures(text_or_doc,
     root_to_idx = {f['root']: i for i, f in enumerate(frames)}
 #    lines.append(f"Найдено структур: {len(frames)}")
 
+    # строим словарь children - дочерные предикатные структуры в слотах
+    children_map = {i: [] for i in range(len(frames))}
+    for idx, frame in enumerate(frames):
+        parent = frame['parent']
+        if parent is not None:
+            parent_idx = root_to_idx.get(parent)
+            if parent_idx is not None:
+                children_map[parent_idx].append((idx, frame['dep_to_parent']))    
+        
+
     for i, frame in enumerate(frames, 1):
         pred_text = frame['predicate_text']
         root = frame['root']
@@ -181,6 +191,12 @@ def format_structures(text_or_doc,
                 
                 lines.append(arg_line)
 
+        # Выводим дочерние предикатные структуры:
+        if children_map.get(i):
+            for child_idx, dep_type in children_map[i]:
+                child_frame = frames[child_idx]
+                child_pred_text = child_frame['predicate_text']
+                lines.append(f"    {dep_type}: {child_pred_text} (Структура {child_idx+1})")
 
         if parent is not None:
             lines.append("    == parent structure ==")
