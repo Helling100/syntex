@@ -41,6 +41,12 @@ class TokenCondition:
                 actual = root.text.lower()
             elif actual_attr == 'side':
                 actual = 'self'
+            elif actual_attr.startswith('morph_'):
+                morph_feature = actual_attr[6:]
+                morph_dict = root.morph.to_dict()
+                actual = morph_dict.get(morph_feature)
+                if isinstance(actual, list):
+                    actual = '|'.join(actual)            
             else:
                 raise ValueError(f"Unknown root attribute: {actual_attr}")
         elif attr.startswith('morph_'):
