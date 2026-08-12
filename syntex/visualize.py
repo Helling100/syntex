@@ -155,7 +155,7 @@ def format_structures(text_or_doc,
         if args:
             sorted_args = sorted(args, key=lambda a: a['tokens'][0].i if a['tokens'] else 0)
             for arg in sorted_args:
-                arg_text = arg['text
+                arg_text = arg['text']
                 if strip_punct:
                     arg_text = _strip_punct(arg_text)
                 arg_morph = arg.get('morph', {})
