@@ -299,6 +299,7 @@ class PredicateArgumentExtractor:
         import json
         frames = self.extract(doc)
 
+        '''
         # Отображение корень -> индекс
         root_to_idx = {f['root']: i for i, f in enumerate(frames)}
         children = {i: [] for i in range(len(frames))}
@@ -308,6 +309,32 @@ class PredicateArgumentExtractor:
                 parent_idx = root_to_idx.get(parent)
                 if parent_idx is not None:
                     children[parent_idx].append((idx, frame['dep_to_parent']))
+        '''
+        # Расширенный поиск родительского индекса
+        def find_parent_frame(parent_token, frames, root_to_idx):
+            parent_idx = root_to_idx.get(parent_token)
+            if parent_idx is not None:
+                return parent_idx
+            # Поиск по тексту корня
+            for i, f in enumerate(frames):
+                if f['root'].text == parent_token.text:
+                    return i
+            # Поиск по pred_tokens
+            for i, f in enumerate(frames):
+                if parent_token in f['predicate_tokens']:
+                    return i
+            return None
+
+        root_to_idx = {f['root']: i for i, f in enumerate(frames)}
+        children = {i: [] for i in range(len(frames))}
+        for idx, frame in enumerate(frames):
+            parent = frame['parent']
+            if parent is not None:
+                parent_idx = find_parent_frame(parent, frames, root_to_idx)
+                if parent_idx is not None:
+                    children[parent_idx].append((idx, frame['dep_to_parent']))        
+        
+        
         # Добавляем children в каждый frame
         for i, frame in enumerate(frames):
             frame['children'] = [{'index': ci, 'dep_type': dep} for ci, dep in children[i]]

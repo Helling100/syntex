@@ -218,8 +218,9 @@ def format_structures(text_or_doc,
             else:
                 lines.append(f"    {dep_to_parent}: {parent.text} (неизвестная структура)")
 
-        if not args and parent is None:
+        if not args and parent is None and not children_map.get(i):
             lines.append("    (аргументов нет)")
+
 
     lines.append("\n" + "="*80 + "\n")
     return "\n".join(lines)
