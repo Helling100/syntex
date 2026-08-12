@@ -76,13 +76,9 @@ def format_structures(text_or_doc,
                       disallowed_args=None,
                       show_morph=False,
                       frames=None):
-    """
-    Форматирует извлечённые структуры в виде многострочной строки.
-    Если передан frames, используется он, иначе вычисляются заново.
-    """
     from .extractor import _build_frames_for_doc
 
-    # Получаем doc и text
+    # Получение doc и text
     if isinstance(text_or_doc, str):
         if nlp is None:
             raise ValueError("Для текста необходимо указать nlp")
@@ -92,7 +88,7 @@ def format_structures(text_or_doc,
         doc = text_or_doc
         text = doc.text
 
-    # Получаем фреймы (если не переданы)
+    # Получение фреймов (если не переданы)
     if frames is None:
         if extractor is not None:
             frames = extractor.extract(doc)
@@ -106,46 +102,40 @@ def format_structures(text_or_doc,
                 disallowed_args=disallowed_args
             )
 
-    # Формируем строку
     lines = []
     if not frames:
         lines.append("Структуры не найдены.")
         return "\n".join(lines)
 
-    # --- ПОСТРОЕНИЕ children_map с расширенным поиском ---
-    # 1. Отображение корень -> индекс
-    root_to_idx = {f['root']: i for i, f in enumerate(frames)}
-    # 2. Для поиска родителя по тексту корня и по pred_tokens
-    def find_parent_idx(parent_token):
-        # По токену
-        idx = root_to_idx.get(parent_token)
-        if idx is not None:
-            return idx
-        # По тексту корня
+    # --- Построение children_map с расширенным поиском ---
+    def find_parent_frame(parent_token, frames, root_to_idx):
+        parent_idx = root_to_idx.get(parent_token)
+        if parent_idx is not None:
+            return parent_idx
         for i, f in enumerate(frames):
             if f['root'].text == parent_token.text:
                 return i
-        # По вхождению в pred_tokens
         for i, f in enumerate(frames):
             if parent_token in f['predicate_tokens']:
                 return i
         return None
 
+    root_to_idx = {f['root']: i for i, f in enumerate(frames)}
     children_map = {i: [] for i in range(len(frames))}
     for idx, frame in enumerate(frames):
         parent = frame['parent']
         if parent is not None:
-            parent_idx = find_parent_idx(parent)
+            parent_idx = find_parent_frame(parent, frames, root_to_idx)
             if parent_idx is not None:
                 children_map[parent_idx].append((idx, frame['dep_to_parent']))
 
-    # --- ВЫВОД ---
+    # --- Формирование строки ---
     for i, frame in enumerate(frames, 1):
         pred_text = frame['predicate_text']
         root = frame['root']
         root_pos = frame['root_pos']
         root_morph = frame.get('root_morph', {})
-        root_morph_str = _format_morph(root_morph)
+        root_morph_str = _format_morph(root_morph) if show_morph else ""
 
         base_str = f"  Структура {i}: {pred_text} (корень: {root.text}, POS: {root_pos}, лемма: {root.lemma_})"
         if show_morph and root_morph_str:
@@ -159,7 +149,7 @@ def format_structures(text_or_doc,
             for arg in sorted_args:
                 arg_text = arg['text']
                 arg_morph = arg.get('morph', {})
-                arg_morph_str = _format_morph(arg_morph)
+                arg_morph_str = _format_morph(arg_morph) if show_morph else ""
                 head = arg['head']
                 head_text = head.text
                 head_lemma = head.lemma_
@@ -173,7 +163,7 @@ def format_structures(text_or_doc,
                     arg_line += " (" + ", ".join(parts) + ")"
                 lines.append(arg_line)
 
-        # Родительская связь (если есть)
+        # Родительская связь
         parent = frame['parent']
         dep_to_parent = frame['dep_to_parent']
         if parent is not None:
@@ -183,30 +173,24 @@ def format_structures(text_or_doc,
                 parent_pred_text = frames[parent_idx]['predicate_text']
                 lines.append(f"    {dep_to_parent}: {parent_pred_text} (Структура {parent_idx+1})")
             else:
-                # если не найден, пробуем по тексту или pred_tokens
-                parent_idx = find_parent_idx(parent)
-                if parent_idx is not None:
-                    parent_pred_text = frames[parent_idx]['predicate_text']
-                    lines.append(f"    {dep_to_parent}: {parent_pred_text} (Структура {parent_idx+1})")
-                else:
-                    lines.append(f"    {dep_to_parent}: {parent.text} (неизвестная структура)")
+                lines.append(f"    {dep_to_parent}: {parent.text} (неизвестная структура)")
 
-        # --- ВЫВОД ДОЧЕРНИХ СТРУКТУР ---
+        # ВЫВОД ДОЧЕРНИХ СТРУКТУР (добавлено!)
         if children_map.get(i):
             for child_idx, dep_type in children_map[i]:
                 child_frame = frames[child_idx]
                 child_pred_text = child_frame['predicate_text']
                 lines.append(f"    {dep_type}: {child_pred_text} (Структура {child_idx+1})")
 
-        # Если нет аргументов, нет родителя и нет детей
+        # Если нет ни аргументов, ни родителя, ни детей
         if not args and parent is None and not children_map.get(i):
             lines.append("    (аргументов нет)")
 
     lines.append("\n" + "="*80 + "\n")
     return "\n".join(lines)
-
-def _show_frames(doc, frames, text, jupyter, show_dep_tree, show_morph=False):
-    """Внутренняя функция вывода."""
+    
+    
+ def _show_frames(doc, frames, text, jupyter, show_dep_tree, show_morph=False):
     print(f"\n{'='*80}")
     print(f"Текст: {text}")
     print(f"{'='*80}\n")
@@ -216,8 +200,7 @@ def _show_frames(doc, frames, text, jupyter, show_dep_tree, show_morph=False):
         if jupyter:
             try:
                 options = {"compact": True, "distance": 120}
-                displacy.render(doc, style="dep", jupyter=True, options=options)                
-                #displacy.render(doc, style="dep", jupyter=True, options={'distance': 100})
+                displacy.render(doc, style="dep", jupyter=True, options=options)
             except Exception:
                 print("(Визуализация недоступна, текстовое представление:)")
                 for token in doc:
@@ -227,52 +210,13 @@ def _show_frames(doc, frames, text, jupyter, show_dep_tree, show_morph=False):
                 print(f"{token.i}: {token.text} -> {token.head.text} ({token.dep_})")
 
     print("\n--- ПРЕДИКАТНО-АРГУМЕНТНЫЕ СТРУКТУРЫ ---")
+    # Используем format_structures с готовыми frames
     structures_str = format_structures(
-        text_or_doc=doc,          # для текста
-        frames=frames,            # передаем уже вычисленные фреймы
-        show_morph=show_morph     # передаем флаг
+        text_or_doc=doc,
+        frames=frames,
+        show_morph=show_morph
     )
-    print(structures_str)    
-    
-    '''
-    if not frames:
-        print("Структуры не найдены.")
-        return
-
-    # Строим отображение корень -> индекс
-    root_to_idx = {f['root']: i for i, f in enumerate(frames)}
-    print(f"Найдено структур: {len(frames)}")
-
-    for i, frame in enumerate(frames, 1):
-        pred_text = frame['predicate_text']
-        root = frame['root']
-        root_pos = frame['root_pos']
-        args = frame['arguments']
-        parent = frame['parent']
-        dep_to_parent = frame['dep_to_parent']
-
-        print(f"  Структура {i}: {pred_text} (корень: {root.text}, POS: {root_pos}, лемма: {root.lemma_})") 
-
-        if args:
-            sorted_args = sorted(args, key=lambda a: a['tokens'][0].i if a['tokens'] else 0)
-            for arg in sorted_args:
-                print(f"    {arg['dep']}: {arg['text']}")
-
-        if parent is not None:
-            print("    == parent structure ==")
-            parent_idx = root_to_idx.get(parent)
-            if parent_idx is not None:
-                parent_pred_text = frames[parent_idx]['predicate_text']
-                print(f"    {dep_to_parent}: {parent_pred_text} (Структура {parent_idx+1})")
-            else:
-                print(f"    {dep_to_parent}: {parent.text} (неизвестная структура)")
-
-        if not args and parent is None:
-            print("    (аргументов нет)")
-      
-
-    print("\n" + "="*80 + "\n")
-    '''
+    print(structures_str)   
 
 def frames_to_table(frames):
     """
