@@ -65,6 +65,7 @@ def _format_morph(morph_dict):
         return ""
     return " | ".join([f"{k}={v}" for k, v in morph_dict.items()])
 
+
 def format_structures(text_or_doc,
                       nlp=None,
                       extractor=None,
@@ -73,17 +74,15 @@ def format_structures(text_or_doc,
                       coord_deps=None,
                       allowed_args=None,
                       disallowed_args=None,
-                      frames=None,
-                      show_morph=False):
+                      show_morph=False,
+                      frames=None):
     """
-    Форматирует извлечённые структуры в виде многострочной строки,
-    аналогичной выводу show_structures, но без печати в консоль.
-    
-    Возвращает строку, которую можно сохранить в файл.
+    Форматирует извлечённые структуры в виде многострочной строки.
+    Если передан frames, используется он, иначе вычисляются заново.
     """
     from .extractor import _build_frames_for_doc
 
-    # Получаем doc
+    # Получаем doc и text
     if isinstance(text_or_doc, str):
         if nlp is None:
             raise ValueError("Для текста необходимо указать nlp")
@@ -93,9 +92,8 @@ def format_structures(text_or_doc,
         doc = text_or_doc
         text = doc.text
 
-
-    # --- Получение фреймов (если не переданы) ---
-    if frames is None:                         
+    # Получаем фреймы (если не переданы)
+    if frames is None:
         if extractor is not None:
             frames = extractor.extract(doc)
         else:
@@ -108,107 +106,76 @@ def format_structures(text_or_doc,
                 disallowed_args=disallowed_args
             )
 
-    '''
-    # Если передан extractor, используем его настройки
-    if extractor is not None:
-        frames = extractor.extract(doc)
-    else:
-        frames = _build_frames_for_doc(
-            doc,
-            token_rules=token_rules,
-            group_rules=group_rules,
-            coord_deps=coord_deps,
-            allowed_args=allowed_args,
-            disallowed_args=disallowed_args
-        )
-    '''
-    
     # Формируем строку
     lines = []
-#    lines.append(f"\n{'='*80}")
-#    lines.append(f"Текст: {text}")
-#    lines.append(f"{'='*80}\n")
-
     if not frames:
         lines.append("Структуры не найдены.")
         return "\n".join(lines)
 
-    # Строим отображение корень -> индекс
+    # --- ПОСТРОЕНИЕ children_map с расширенным поиском ---
+    # 1. Отображение корень -> индекс
     root_to_idx = {f['root']: i for i, f in enumerate(frames)}
-#    lines.append(f"Найдено структур: {len(frames)}")
-
-    # строим словарь children - дочерные предикатные структуры в слотах, в т.ч. многокомпонентные
-    root_to_idx = {f['root']: i for i, f in enumerate(frames)}
-    root_text_to_idx = {f['root'].text: i for i, f in enumerate(frames)}
+    # 2. Для поиска родителя по тексту корня и по pred_tokens
+    def find_parent_idx(parent_token):
+        # По токену
+        idx = root_to_idx.get(parent_token)
+        if idx is not None:
+            return idx
+        # По тексту корня
+        for i, f in enumerate(frames):
+            if f['root'].text == parent_token.text:
+                return i
+        # По вхождению в pred_tokens
+        for i, f in enumerate(frames):
+            if parent_token in f['predicate_tokens']:
+                return i
+        return None
 
     children_map = {i: [] for i in range(len(frames))}
     for idx, frame in enumerate(frames):
         parent = frame['parent']
         if parent is not None:
-            parent_idx = root_to_idx.get(parent)
-            if parent_idx is None:
-                parent_idx = root_text_to_idx.get(parent.text)
-            if parent_idx is None:
-                # Ищем фрейм, в predicate_tokens которого входит parent
-                for i, f in enumerate(frames):
-                    if parent in f['predicate_tokens']:
-                        parent_idx = i
-                        break
+            parent_idx = find_parent_idx(parent)
             if parent_idx is not None:
-                children_map[parent_idx].append((idx, frame['dep_to_parent']))        
-                
+                children_map[parent_idx].append((idx, frame['dep_to_parent']))
 
+    # --- ВЫВОД ---
     for i, frame in enumerate(frames, 1):
         pred_text = frame['predicate_text']
         root = frame['root']
         root_pos = frame['root_pos']
         root_morph = frame.get('root_morph', {})
         root_morph_str = _format_morph(root_morph)
-        args = frame['arguments']
-        parent = frame['parent']
-        dep_to_parent = frame['dep_to_parent']
 
-        base_str = f"  Структура {i}: {pred_text} | head: {root.text}, POS: {root_pos}, lemma: {root.lemma_}"
+        base_str = f"  Структура {i}: {pred_text} (корень: {root.text}, POS: {root_pos}, лемма: {root.lemma_})"
         if show_morph and root_morph_str:
-            base_str += f", morph: {root_morph_str}"    
+            base_str += f", morph: {root_morph_str}"
         lines.append(base_str)
-        #lines.append(f"  Структура {i}: {pred_text} (корень: {root.text}, POS: {root_pos}, лемма: {root.lemma_})") 
 
+        # Аргументы
+        args = frame['arguments']
         if args:
             sorted_args = sorted(args, key=lambda a: a['tokens'][0].i if a['tokens'] else 0)
-#            for arg in sorted_args:
-#                lines.append(f"    {arg['dep']}: {arg['text']}")
             for arg in sorted_args:
                 arg_text = arg['text']
                 arg_morph = arg.get('morph', {})
                 arg_morph_str = _format_morph(arg_morph)
-                
                 head = arg['head']
                 head_text = head.text
-                head_lemma = head.lemma_ #arg.get('head_lemma', '')
-                head_pos = head.pos_ #arg.get('head_pos', '')
-
+                head_lemma = head.lemma_
+                head_pos = head.pos_
                 arg_line = f"    {arg['dep']}: {arg_text}"
-                #if show_morph and arg_morph_str:
-                #    arg_line += f" (morph: {arg_morph_str})"
                 if show_morph:
                     parts = []
-                    if head_lemma and head_pos:
-                        parts.append(f"head: {head_text}, lemma: {head_lemma}, POS: {head_pos}")
                     if arg_morph_str:
                         parts.append(f"morph: {arg_morph_str}")
-                    if parts:
-                        arg_line += " (" + ", ".join(parts) + ")"
-                
+                    parts.append(f"главное: {head_text} ({head_lemma}, {head_pos})")
+                    arg_line += " (" + ", ".join(parts) + ")"
                 lines.append(arg_line)
 
-        # Выводим дочерние предикатные структуры:
-        if children_map.get(i):
-            for child_idx, dep_type in children_map[i]:
-                child_frame = frames[child_idx]
-                child_pred_text = child_frame['predicate_text']
-                lines.append(f"    {dep_type}: {child_pred_text} (Структура {child_idx+1})")
-
+        # Родительская связь (если есть)
+        parent = frame['parent']
+        dep_to_parent = frame['dep_to_parent']
         if parent is not None:
             lines.append("    == parent structure ==")
             parent_idx = root_to_idx.get(parent)
@@ -216,15 +183,27 @@ def format_structures(text_or_doc,
                 parent_pred_text = frames[parent_idx]['predicate_text']
                 lines.append(f"    {dep_to_parent}: {parent_pred_text} (Структура {parent_idx+1})")
             else:
-                lines.append(f"    {dep_to_parent}: {parent.text} (неизвестная структура)")
+                # если не найден, пробуем по тексту или pred_tokens
+                parent_idx = find_parent_idx(parent)
+                if parent_idx is not None:
+                    parent_pred_text = frames[parent_idx]['predicate_text']
+                    lines.append(f"    {dep_to_parent}: {parent_pred_text} (Структура {parent_idx+1})")
+                else:
+                    lines.append(f"    {dep_to_parent}: {parent.text} (неизвестная структура)")
 
+        # --- ВЫВОД ДОЧЕРНИХ СТРУКТУР ---
+        if children_map.get(i):
+            for child_idx, dep_type in children_map[i]:
+                child_frame = frames[child_idx]
+                child_pred_text = child_frame['predicate_text']
+                lines.append(f"    {dep_type}: {child_pred_text} (Структура {child_idx+1})")
+
+        # Если нет аргументов, нет родителя и нет детей
         if not args and parent is None and not children_map.get(i):
             lines.append("    (аргументов нет)")
 
-
     lines.append("\n" + "="*80 + "\n")
     return "\n".join(lines)
-
 
 def _show_frames(doc, frames, text, jupyter, show_dep_tree, show_morph=False):
     """Внутренняя функция вывода."""
