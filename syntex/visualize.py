@@ -104,7 +104,7 @@ def format_structures(text_or_doc,
 
     lines = []
     if not frames:
-        lines.append("Структуры не найдены.")
+        lines.append("Predicate Structures are not found.")
         return "\n".join(lines)
 
     # --- Построение children_map с расширенным поиском ---
@@ -139,7 +139,7 @@ def format_structures(text_or_doc,
         root_morph = frame.get('root_morph', {})
         root_morph_str = _format_morph(root_morph) if show_morph else ""
 
-        base_str = f"  Структура {structure_num}: {pred_text} (корень: {root.text}, POS: {root_pos}, лемма: {root.lemma_})"
+        base_str = f"  Structure {structure_num}: {pred_text} | root: {root.text}, lemma: {root.lemma_}, POS: {root_pos}"
         if show_morph and root_morph_str:
             base_str += f", morph: {root_morph_str}"
         lines.append(base_str)
@@ -159,10 +159,10 @@ def format_structures(text_or_doc,
                 arg_line = f"    {arg['dep']}: {arg_text}"
                 if show_morph:
                     parts = []
+                    parts.append(f"head: {head_text}, lemma: {head_lemma}, POS: {head_pos}")
                     if arg_morph_str:
                         parts.append(f"morph: {arg_morph_str}")
-                    parts.append(f"главное: {head_text} ({head_lemma}, {head_pos})")
-                    arg_line += " (" + ", ".join(parts) + ")"
+                    arg_line += " | " + ", ".join(parts) #+ ")"
                 lines.append(arg_line)
 
         # Родительская связь
@@ -173,16 +173,16 @@ def format_structures(text_or_doc,
             parent_idx = root_to_idx.get(parent)
             if parent_idx is not None:
                 parent_pred_text = frames[parent_idx]['predicate_text']
-                lines.append(f"    {dep_to_parent}: {parent_pred_text} (Структура {parent_idx+1})")
+                lines.append(f"    {dep_to_parent}: {parent_pred_text} (Structure {parent_idx+1})")
             else:
-                lines.append(f"    {dep_to_parent}: {parent.text} (неизвестная структура)")
+                lines.append(f"    {dep_to_parent}: {parent.text} (unknown structure)")
 
         # ВЫВОД ДОЧЕРНИХ СТРУКТУР (используем idx, а не structure_num)
         if children_map.get(idx):
             for child_idx, dep_type in children_map[idx]:
                 child_frame = frames[child_idx]
                 child_pred_text = child_frame['predicate_text']
-                lines.append(f"    {dep_type}: {child_pred_text} (Структура {child_idx+1})")
+                lines.append(f"    {dep_type}: {child_pred_text} (Structure {child_idx+1})")
 
         # Если нет ни аргументов, ни родителя, ни детей
         if not args and parent is None and not children_map.get(idx):
@@ -214,7 +214,7 @@ def _show_frames(doc, frames, text, jupyter, show_dep_tree, show_morph=False):
             for token in doc:
                 print(f"{token.i}: {token.text} -> {token.head.text} ({token.dep_})")
 
-    print("\n--- ПРЕДИКАТНО-АРГУМЕНТНЫЕ СТРУКТУРЫ ---")
+    print("\n--- PREDICATE-ARGUMENT STRUCTURES ---")
     # Используем format_structures с готовыми frames
     structures_str = format_structures(
         text_or_doc=doc,
