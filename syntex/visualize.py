@@ -159,6 +159,9 @@ def format_structures(text_or_doc,
                 arg_text = arg['text']
                 if strip_punct:
                     arg_text = _strip_punct(arg_text)
+                
+                print(f"DEBUG: original='{arg['text']}', stripped='{arg_text}'")
+                
                 arg_morph = arg.get('morph', {})
                 arg_morph_str = _format_morph(arg_morph) if show_morph else ""
                 head = arg['head']
