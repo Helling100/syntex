@@ -18,7 +18,8 @@ def show_structures(text_or_doc,
                     disallowed_args=None,
                     jupyter=True,
                     show_dep_tree=True,
-                    show_morph=False):
+                    show_morph=False,
+                    strip_punct = False):
     """
     Визуализирует синтаксическое дерево и извлечённые предикатно-аргументные структуры.
     
@@ -203,7 +204,7 @@ def format_structures(text_or_doc,
     return "\n".join(lines)
     
     
-def _show_frames(doc, frames, text, jupyter, show_dep_tree, show_morph=False):
+def _show_frames(doc, frames, text, jupyter, show_dep_tree, show_morph=False,strip_punct = False):
     print(f"\n{'='*80}")
     print(f"Текст: {text}")
     print(f"{'='*80}\n")
