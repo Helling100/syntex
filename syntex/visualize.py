@@ -158,11 +158,7 @@ def format_structures(text_or_doc,
             for arg in sorted_args:
                 arg_text = arg['text']
                 if strip_punct:
-                    arg_text = _strip_punct(arg_text)
-                
-                print(f"DEBUG format_structures: strip_punct={strip_punct}")
-                print(f"DEBUG: original='{arg['text']}', stripped='{arg_text}'")
-                
+                    arg_text = _strip_punct(arg_text)              
                 arg_morph = arg.get('morph', {})
                 arg_morph_str = _format_morph(arg_morph) if show_morph else ""
                 head = arg['head']
