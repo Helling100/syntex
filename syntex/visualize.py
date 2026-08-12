@@ -174,6 +174,13 @@ def format_structures(text_or_doc,
                     arg_line += " | " + ", ".join(parts) #+ ")"
                 lines.append(arg_line)
 
+        # ВЫВОД ДОЧЕРНИХ СТРУКТУР 
+        if children_map.get(idx):
+            for child_idx, dep_type in children_map[idx]:
+                child_frame = frames[child_idx]
+                child_pred_text = child_frame['predicate_text']
+                lines.append(f"    {dep_type}: {child_pred_text} (Structure {child_idx+1})")
+
         # Родительская связь
         parent = frame['parent']
         dep_to_parent = frame['dep_to_parent']
@@ -186,12 +193,6 @@ def format_structures(text_or_doc,
             else:
                 lines.append(f"    {dep_to_parent}: {parent.text} (unknown structure)")
 
-        # ВЫВОД ДОЧЕРНИХ СТРУКТУР (используем idx, а не structure_num)
-        if children_map.get(idx):
-            for child_idx, dep_type in children_map[idx]:
-                child_frame = frames[child_idx]
-                child_pred_text = child_frame['predicate_text']
-                lines.append(f"    {dep_type}: {child_pred_text} (Structure {child_idx+1})")
 
         # Если нет ни аргументов, ни родителя, ни детей
         if not args and parent is None and not children_map.get(idx):
