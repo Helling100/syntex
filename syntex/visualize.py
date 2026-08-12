@@ -5,6 +5,7 @@
 from typing import Optional, Union, List
 import spacy
 from spacy import displacy
+import string
 
 
 def show_structures(text_or_doc,
@@ -75,7 +76,8 @@ def format_structures(text_or_doc,
                       allowed_args=None,
                       disallowed_args=None,
                       show_morph=False,
-                      frames=None):
+                      frames=None,
+                      strip_punct = False):
     from .extractor import _build_frames_for_doc
 
     # Получение doc и text
@@ -144,12 +146,18 @@ def format_structures(text_or_doc,
             base_str += f", morph: {root_morph_str}"
         lines.append(base_str)
 
+          
         # Аргументы
+        def _strip_punct(text):
+            return text.strip(string.punctuation + ' ')
+ 
         args = frame['arguments']
         if args:
             sorted_args = sorted(args, key=lambda a: a['tokens'][0].i if a['tokens'] else 0)
             for arg in sorted_args:
-                arg_text = arg['text']
+                arg_text = arg['text
+                if strip_punct:
+                    arg_text = _strip_punct(arg_text)
                 arg_morph = arg.get('morph', {})
                 arg_morph_str = _format_morph(arg_morph) if show_morph else ""
                 head = arg['head']
