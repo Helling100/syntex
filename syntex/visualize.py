@@ -129,15 +129,17 @@ def format_structures(text_or_doc,
             if parent_idx is not None:
                 children_map[parent_idx].append((idx, frame['dep_to_parent']))
 
+
     # --- Формирование строки ---
-    for i, frame in enumerate(frames, 1):
+    for idx, frame in enumerate(frames):
+        structure_num = idx + 1
         pred_text = frame['predicate_text']
         root = frame['root']
         root_pos = frame['root_pos']
         root_morph = frame.get('root_morph', {})
         root_morph_str = _format_morph(root_morph) if show_morph else ""
 
-        base_str = f"  Структура {i}: {pred_text} (корень: {root.text}, POS: {root_pos}, лемма: {root.lemma_})"
+        base_str = f"  Структура {structure_num}: {pred_text} (корень: {root.text}, POS: {root_pos}, лемма: {root.lemma_})"
         if show_morph and root_morph_str:
             base_str += f", morph: {root_morph_str}"
         lines.append(base_str)
@@ -175,16 +177,19 @@ def format_structures(text_or_doc,
             else:
                 lines.append(f"    {dep_to_parent}: {parent.text} (неизвестная структура)")
 
-        # ВЫВОД ДОЧЕРНИХ СТРУКТУР (добавлено!)
-        if children_map.get(i):
-            for child_idx, dep_type in children_map[i]:
+        # ВЫВОД ДОЧЕРНИХ СТРУКТУР (используем idx, а не structure_num)
+        if children_map.get(idx):
+            for child_idx, dep_type in children_map[idx]:
                 child_frame = frames[child_idx]
                 child_pred_text = child_frame['predicate_text']
                 lines.append(f"    {dep_type}: {child_pred_text} (Структура {child_idx+1})")
 
         # Если нет ни аргументов, ни родителя, ни детей
-        if not args and parent is None and not children_map.get(i):
+        if not args and parent is None and not children_map.get(idx):
             lines.append("    (аргументов нет)")
+
+
+
 
     lines.append("\n" + "="*80 + "\n")
     return "\n".join(lines)
