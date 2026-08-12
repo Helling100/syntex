@@ -59,7 +59,7 @@ def show_structures(text_or_doc,
         allowed_args=allowed_args,
         disallowed_args=disallowed_args
     )
-    _show_frames(doc, frames, text, jupyter, show_dep_tree, show_morph=show_morph)
+    _show_frames(doc, frames, text, jupyter, show_dep_tree, show_morph=show_morph, strip_punct = strip_punct)
 
 def _format_morph(morph_dict):
     """Преобразует словарь морфологических признаков в строку вида 'Number=Plur|Case=Nom'."""
@@ -160,6 +160,7 @@ def format_structures(text_or_doc,
                 if strip_punct:
                     arg_text = _strip_punct(arg_text)
                 
+                print(f"DEBUG format_structures: strip_punct={strip_punct}")
                 print(f"DEBUG: original='{arg['text']}', stripped='{arg_text}'")
                 
                 arg_morph = arg.get('morph', {})
@@ -231,7 +232,8 @@ def _show_frames(doc, frames, text, jupyter, show_dep_tree, show_morph=False,str
     structures_str = format_structures(
         text_or_doc=doc,
         frames=frames,
-        show_morph=show_morph
+        show_morph=show_morph,
+        strip_punct = strip_punct
     )
     print(structures_str)   
 
