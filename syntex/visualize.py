@@ -190,7 +190,7 @@ def format_structures(text_or_doc,
     return "\n".join(lines)
     
     
- def _show_frames(doc, frames, text, jupyter, show_dep_tree, show_morph=False):
+def _show_frames(doc, frames, text, jupyter, show_dep_tree, show_morph=False):
     print(f"\n{'='*80}")
     print(f"Текст: {text}")
     print(f"{'='*80}\n")
