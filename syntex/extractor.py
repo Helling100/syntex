@@ -82,6 +82,7 @@ def get_roots(doc, coord_deps=None, token_rules=None, group_rules=None):
         current = stack.pop()
         pred_components = pred_tokens_for(current)   # ключевой момент
 
+        '''
         # coord_deps смотрим от КАЖДОГО компонента предиката, не только от корня
         for comp in pred_components:
             for child in comp.children:
@@ -92,7 +93,32 @@ def get_roots(doc, coord_deps=None, token_rules=None, group_rules=None):
                     roots.append(child)
                     parent_map[child] = comp          # родитель = сам компонент
                     stack.append(child)
+        '''
+        # Расширяем: добавляем прямых детей pred_components (первый уровень),
+        # чтобы увидеть acl:relcl, привязанные к аргументам (не к pred_tokens).
+        extended = list(pred_components)
+        for comp in pred_components:
+            for child in comp.children:
+                if not child.is_punct and not child.is_space and child not in extended:
+                    extended.append(child)
 
+        for comp in extended:
+            for child in comp.children:
+                if child.i in visited:
+                    continue
+
+                # acl:relcl регистрируем и у pred_tokens, и у их детей-аргументов;
+                # остальные coord_deps — только у pred_tokens (как раньше).
+                is_relcl = (child.dep_ == 'acl:relcl')
+                is_other_coord = (child.dep_ in coord_deps and comp in pred_components)
+
+                if is_relcl or is_other_coord:
+                    visited.add(child.i)
+                    roots.append(child)
+                    parent_map[child] = comp
+                    stack.append(child)
+        
+        
     return roots, parent_map
 
 def _build_frames_for_doc(doc,
@@ -132,7 +158,7 @@ def _build_frames_for_doc(doc,
         if disallowed_args and root_pos in disallowed_args:
             final_disallowed = disallowed_args[root_pos]
 
-        # --- Сборка предиката ---
+        # 1. Сборка предиката
         pred_tokens = [root]
         children = [c for c in root.children if not c.is_punct and not c.is_space]
 
@@ -185,7 +211,7 @@ def _build_frames_for_doc(doc,
         pred_text = " ".join(tok.text.lower() for tok in pred_tokens)
 
 
-        #Динамическая проверка допустимых отношений к атрибутом от каждого из компонентов многокомпонентного предиката, в зависимости от части речи компонента
+        # Динамическая проверка допустимых отношений к атрибутом от каждого из компонентов многокомпонентного предиката, в зависимости от части речи компонента
         def get_filters_for_head(head_token):
             """Возвращает (allowed, disallowed) для данного токена-головы."""
             head_pos = head_token.pos_
@@ -207,7 +233,7 @@ def _build_frames_for_doc(doc,
             return allowed, disallowed
 
 
-        # --- Сбор аргументов dep ---
+        # 2. Сбор аргументов dep
         arguments = []
  
         def collect_arguments(node):
@@ -273,7 +299,7 @@ def _build_frames_for_doc(doc,
         })
 
 
-    # --- Постобработка: удаляем фреймы, чей корень входит в pred_tokens другого фрейма ---
+    # Постобработка: удаляем фреймы, чей корень входит в pred_tokens другого фрейма ---
     # Строим словарь корень -> фрейм
     root_to_frame = {f['root']: f for f in result}
     merged_frames = []
