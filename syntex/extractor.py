@@ -12,7 +12,9 @@ def collect_subtree(token):
         nodes.extend(collect_subtree(child))
     return nodes
 
-
+####
+# Вар 1.
+'''
 def get_roots(doc, coord_deps=None):
     """Возвращает список корней и словарь родительских связей."""
     if coord_deps is None:
@@ -41,7 +43,68 @@ def get_roots(doc, coord_deps=None):
                 stack.append(child)
 
     return roots, parent_map
+'''
 
+#Вар 2.
+def get_roots(doc, coord_deps=None, token_rules=None):
+    if coord_deps is None:
+        coord_deps = ['conj', 'parataxis']
+
+    root = None
+    for token in doc:
+        if token.dep_ == 'ROOT' and token.pos_ == 'VERB':
+            root = token
+            break
+    if root is None:
+        root = next((t for t in doc if t.head == t), None)
+    if root is None:
+        return [], {}
+
+    def pred_tokens_for(r):
+        """Собирает pred_tokens по тем же правилам, что и _build_frames_for_doc."""
+        pred = [r]
+        if not token_rules:
+            return pred
+        changed = True
+        while changed:
+            changed = False
+            seen = set(pred)
+            candidates = []
+            for pt in pred:
+                for c in pt.children:
+                    if c.is_punct or c.is_space or c in seen:
+                        continue
+                    seen.add(c)
+                    candidates.append(c)
+            for c in candidates:
+                for rule in token_rules:
+                    if rule.matches(c, r):
+                        pred.append(c)
+                        changed = True
+                        break
+        return pred
+
+    roots = [root]
+    parent_map = {root: None}
+    visited = {root.i}
+    stack = [root]
+
+    while stack:
+        current = stack.pop()
+        pred_components = pred_tokens_for(current)   # ключевой момент
+
+        # coord_deps смотрим от КАЖДОГО компонента предиката, не только от корня
+        for comp in pred_components:
+            for child in comp.children:
+                if child.i in visited:
+                    continue
+                if child.dep_ in coord_deps:
+                    visited.add(child.i)
+                    roots.append(child)
+                    parent_map[child] = comp          # родитель = сам компонент
+                    stack.append(child)
+
+    return roots, parent_map
 
 def _build_frames_for_doc(doc,
                          token_rules=None,
@@ -85,6 +148,8 @@ def _build_frames_for_doc(doc,
         children = [c for c in root.children if not c.is_punct and not c.is_space]
 
         # Применяем одиночные правила
+        # Вар 1.
+        '''
         if token_rules:
             for child in children:
                 for rule in token_rules:
@@ -92,6 +157,33 @@ def _build_frames_for_doc(doc,
                         if child not in pred_tokens:
                             pred_tokens.append(child)
                         break
+        '''
+        
+        ######
+        #Вар 2. Применяем правила также для зависимых корня
+        if token_rules:
+            changed = True
+            while changed:
+                changed = False
+
+                # Кандидаты: дети любого токена из pred_tokens, ещё не входящие в предикат
+                candidates = []
+                seen = set(pred_tokens)
+                for pt in pred_tokens:
+                    for c in pt.children:
+                        if c.is_punct or c.is_space or c in seen:
+                            continue
+                        seen.add(c)
+                        candidates.append(c)
+
+                for child in candidates:
+                    for rule in token_rules:
+                        if rule.matches(child, root):
+                            if child not in pred_tokens:
+                                pred_tokens.append(child)
+                                changed = True
+                            break
+
 
         # Применяем групповые правила
         if group_rules:
