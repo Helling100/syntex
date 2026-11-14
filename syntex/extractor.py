@@ -256,7 +256,7 @@ def _build_frames_for_doc(doc,
         # 2. Сбор аргументов dep
         arguments = []
  
-        def collect_arguments(node, visited):
+        def collect_arguments(node, visited=None):
             if visited is None:
                 visited = set()
             if node.i in visited:
@@ -303,14 +303,14 @@ def _build_frames_for_doc(doc,
                 return
 
             for child in node.children:
-                collect_arguments(child)
+                collect_arguments(child, visited)
 
         for child in root.children:
             if child.is_punct or child.is_space:
                 continue
             if child.dep_ in coord_deps:
                 continue
-            collect_arguments(child)
+            collect_arguments(child, set())
 
         # Родительская информация
         parent = parent_map.get(root)
