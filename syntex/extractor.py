@@ -139,7 +139,7 @@ def get_roots(doc, coord_deps=None, token_rules=None, group_rules=None):
         
     return roots, parent_map
 
-def c(doc,
+def _build_frames_for_doc(doc,
                          token_rules=None,
                          group_rules=None,
                          coord_deps=None,
