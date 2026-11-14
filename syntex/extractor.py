@@ -12,6 +12,22 @@ def collect_subtree(token):
         nodes.extend(collect_subtree(child))
     return nodes
 
+def collect_arg_tokens(node, root, pred_tokens, roots):
+    """
+    Собирает токены аргумента, НЕ заходя в поддеревья roots-токенов
+    (корней других фреймов), кроме текущего root.
+    """
+    result = []
+    def rec(t):
+        # это корень другого фрейма — не включаем и не идём внутрь
+        if t is not node and t in roots and t is not root:
+            return
+        result.append(t)
+        for c in t.children:
+            rec(c)
+    rec(node)
+    return result
+
 
 def _build_pred_tokens(root, token_rules, coord_deps):
     pred = [root]
@@ -123,7 +139,7 @@ def get_roots(doc, coord_deps=None, token_rules=None, group_rules=None):
         
     return roots, parent_map
 
-def _build_frames_for_doc(doc,
+def c(doc,
                          token_rules=None,
                          group_rules=None,
                          coord_deps=None,
@@ -253,7 +269,8 @@ def _build_frames_for_doc(doc,
                 # Получаем фильтры для POS головы (которая в pred_tokens)
                 allowed, disallowed = get_filters_for_head(node.head)                
                 
-                subtree = collect_subtree(node)
+                #subtree = collect_subtree(node)
+                subtree = collect_arg_tokens(node, root, pred_tokens, roots)
                 sorted_nodes = sorted(subtree, key=lambda t: t.i)
                 filtered_nodes = [t for t in sorted_nodes if t not in pred_tokens and not (t in roots and t is not root)] #<<-
  
