@@ -60,8 +60,8 @@ def get_roots(doc, coord_deps=None, token_rules=None):
     if root is None:
         return [], {}
 
+
     def pred_tokens_for(r):
-        """Собирает pred_tokens по тем же правилам, что и _build_frames_for_doc."""
         pred = [r]
         if not token_rules:
             return pred
@@ -74,6 +74,8 @@ def get_roots(doc, coord_deps=None, token_rules=None):
                 for c in pt.children:
                     if c.is_punct or c.is_space or c in seen:
                         continue
+                    if c.dep_ in coord_deps:      # ← НЕ всасываем сочинённые
+                        continue
                     seen.add(c)
                     candidates.append(c)
             for c in candidates:
@@ -83,6 +85,7 @@ def get_roots(doc, coord_deps=None, token_rules=None):
                         changed = True
                         break
         return pred
+
 
     roots = [root]
     parent_map = {root: None}
