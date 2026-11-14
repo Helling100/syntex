@@ -102,9 +102,9 @@ def get_roots(doc, coord_deps=None, token_rules=None, group_rules=None):
                 if not child.is_punct and not child.is_space and child not in extended:
                     extended.append(child)
 
-        print(f"current={current.text!r} pred_components={[c.text for c in pred_components]} extended={[c.text for c in extended]}")
+        #print(f"current={current.text!r} pred_components={[c.text for c in pred_components]} extended={[c.text for c in extended]}")
         for comp in extended:
-            print(f"  comp={comp.text!r} children={[c.text for c in comp.children]}")
+            #print(f"  comp={comp.text!r} children={[c.text for c in comp.children]}")
             for child in comp.children:
                 if child.i in visited:
                     continue
@@ -255,7 +255,8 @@ def _build_frames_for_doc(doc,
                 
                 subtree = collect_subtree(node)
                 sorted_nodes = sorted(subtree, key=lambda t: t.i)
-                filtered_nodes = [t for t in sorted_nodes if t not in pred_tokens]
+                filtered_nodes = [t for t in sorted_nodes if t not in pred_tokens and not (t in roots and t is not root)] #<<-
+ 
                 if filtered_nodes:
                     dep = node.dep_
                     if allowed is not None and dep not in allowed:
