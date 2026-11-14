@@ -14,7 +14,6 @@ def collect_subtree(token):
 
 
 def _build_pred_tokens(root, token_rules, coord_deps):
-    """Единая сборка pred_tokens для корня. Используется и в get_roots, и в _build_frames_for_doc."""
     pred = [root]
     if not token_rules:
         return pred
@@ -39,38 +38,6 @@ def _build_pred_tokens(root, token_rules, coord_deps):
                     break
     return pred
 
-####
-# Вар 1.
-'''
-def get_roots(doc, coord_deps=None):
-    """Возвращает список корней и словарь родительских связей."""
-    if coord_deps is None:
-        coord_deps = ['conj', 'parataxis']
-
-    root = None
-    for token in doc:
-        if token.dep_ == 'ROOT' and token.pos_ == 'VERB':
-            root = token
-            break
-    if root is None:
-        root = next((token for token in doc if token.head == token), None)
-    if root is None:
-        return [], {}
-
-    roots = [root]
-    parent_map = {root: None}
-    stack = [root]
-
-    while stack:
-        current = stack.pop()
-        for child in current.children:
-            if child.dep_ in coord_deps and child not in roots:
-                roots.append(child)
-                parent_map[child] = current
-                stack.append(child)
-
-    return roots, parent_map
-'''
 
 #Вар 2.
 def get_roots(doc, coord_deps=None, token_rules=None, group_rules=None):
@@ -87,38 +54,7 @@ def get_roots(doc, coord_deps=None, token_rules=None, group_rules=None):
     if root is None:
         return [], {}
 
-    '''
-    def pred_tokens_for(r):
-        pred = [r]
-        if not token_rules:
-            return pred
-        changed = True
-        while changed:
-            changed = False
-            seen = set(pred)
-            candidates = []
-            for pt in pred:
-                for c in pt.children:
-                    if c.is_punct or c.is_space or c in seen:
-                        continue
-                    if c.dep_ in coord_deps:      # НЕ рассматриваем сочинённые
-                        continue
-                    seen.add(c)
-                    candidates.append(c)
-            for c in candidates:
-                for rule in token_rules:
-#                    if rule.matches(c, r):
-                    if rule.matches(c, pred): # <==
-                        pred.append(c)
-                        changed = True
-                        break
-        return pred
-    '''
-    '''
-    def pred_tokens_for(r):
-        return _build_pred_tokens(r, token_rules, coord_deps)
-    '''
-    
+    #Вар 2    
     def pred_tokens_for(r):
             pred = _build_pred_tokens(r, token_rules, coord_deps)
             if group_rules:
@@ -294,12 +230,6 @@ def _build_frames_for_doc(doc,
                 filtered_nodes = [t for t in sorted_nodes if t not in pred_tokens]
                 if filtered_nodes:
                     dep = node.dep_
-                    '''
-                    if final_allowed is not None and dep not in final_allowed:
-                        return
-                    if final_disallowed is not None and dep in final_disallowed:
-                        return
-                    '''
                     if allowed is not None and dep not in allowed:
                         return
                     if disallowed is not None and dep in disallowed:
@@ -443,17 +373,6 @@ class PredicateArgumentExtractor:
         import json
         frames = self.extract(doc)
 
-        '''
-        # Отображение корень -> индекс
-        root_to_idx = {f['root']: i for i, f in enumerate(frames)}
-        children = {i: [] for i in range(len(frames))}
-        for idx, frame in enumerate(frames):
-            parent = frame['parent']
-            if parent is not None:
-                parent_idx = root_to_idx.get(parent)
-                if parent_idx is not None:
-                    children[parent_idx].append((idx, frame['dep_to_parent']))
-        '''
         # Расширенный поиск родительского индекса
         def find_parent_frame(parent_token, frames, root_to_idx):
             parent_idx = root_to_idx.get(parent_token)
