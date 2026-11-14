@@ -164,6 +164,7 @@ def _build_frames_for_doc(doc,
         
         ######
         #Вар 2. Применяем правила также для зависимых корня
+        '''
         if token_rules:
             changed = True
             while changed:
@@ -188,9 +189,36 @@ def _build_frames_for_doc(doc,
                                 pred_tokens.append(child)
                                 changed = True
                             break
+        '''
+        
+        if token_rules:
+            changed = True
+            while changed:
+                changed = False
+                candidates = []
+                seen = set(pred_tokens)
+                for pt in pred_tokens:
+                    for c in pt.children:
+                        if c.is_punct or c.is_space or c in seen:
+                            continue
+                        if c.dep_ in coord_deps:
+                            print(f"SKIP (coord): {c.text!r} dep={c.dep_}")
+                            continue
+                        seen.add(c)
+                        candidates.append(c)
+                print(f"ITER candidates: {[(c.text, c.dep_) for c in candidates]}")
+                for child in candidates:
+                    for rule in token_rules:
+                        if rule.matches(child, root):
+                            print(f"MATCH rule={rule.conditions} child={child.text!r} dep={child.dep_}")
+                            if child not in pred_tokens:
+                                pred_tokens.append(child)
+                                changed = True
+                            break
 
 
         # Применяем групповые правила
+        '''
         if group_rules:
             for group_rule in group_rules:
                 matched = group_rule.apply(children, root)
@@ -202,6 +230,14 @@ def _build_frames_for_doc(doc,
                     for token in matched:
                         if token in pred_tokens:
                             pred_tokens.remove(token)
+        '''
+        
+        if group_rules:
+            for group_rule in group_rules:
+                matched = group_rule.apply(children, root)
+                if matched:
+                    print(f"GROUP matched: {[t.text for t in matched]} action={group_rule.action}")
+
 
         pred_tokens.sort(key=lambda t: t.i)
         pred_text = " ".join(tok.text.lower() for tok in pred_tokens)
