@@ -74,7 +74,7 @@ def get_roots(doc, coord_deps=None, token_rules=None):
                 for c in pt.children:
                     if c.is_punct or c.is_space or c in seen:
                         continue
-                    if c.dep_ in coord_deps:      # ← НЕ всасываем сочинённые
+                    if c.dep_ in coord_deps:      # НЕ рассматриваем сочинённые
                         continue
                     seen.add(c)
                     candidates.append(c)
@@ -176,6 +176,8 @@ def _build_frames_for_doc(doc,
                     for c in pt.children:
                         if c.is_punct or c.is_space or c in seen:
                             continue
+                        if c.dep_ in coord_deps:      # Не рассматриваем сочиненные
+                            continue                        
                         seen.add(c)
                         candidates.append(c)
 
