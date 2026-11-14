@@ -49,6 +49,7 @@ def _build_pred_tokens(root, token_rules, coord_deps):
         for c in candidates:
             for rule in token_rules:
                 if rule.matches(c, pred):
+                  if c not in pred:
                     pred.append(c)
                     changed = True
                     break
@@ -128,7 +129,8 @@ def get_roots(doc, coord_deps=None, token_rules=None, group_rules=None):
                 # acl:relcl регистрируем и у pred_tokens, и у их детей-аргументов;
                 # остальные coord_deps — только у pred_tokens (как раньше).
                 is_relcl = (child.dep_ == 'acl:relcl')
-                is_other_coord = (child.dep_ in coord_deps and comp in pred_components)
+                is_other_coord = (child.dep_ in coord_deps and 
+                   (comp in pred_components or child.dep_ in ('acl', 'acl:relcl', 'ccomp'))) #<<-
 
                 if is_relcl or is_other_coord:
                     visited.add(child.i)
@@ -254,7 +256,14 @@ def _build_frames_for_doc(doc,
         # 2. Сбор аргументов dep
         arguments = []
  
-        def collect_arguments(node):
+        def collect_arguments(node, visited):
+            if visited is None:
+                visited = set()
+            if node.i in visited:
+                return
+            visited.add(node.i)
+            
+            
             if node in roots and node is not root: # это корень другого фрейма — его аргументы соберет свой фрейм
                 return            
                 
