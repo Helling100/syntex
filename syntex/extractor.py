@@ -126,7 +126,7 @@ def _build_frames_for_doc(doc,
     if coord_deps is None:
         coord_deps = ['conj', 'parataxis']
 
-    roots, parent_map = get_roots(doc, coord_deps)
+    roots, parent_map = get_roots(doc, coord_deps, token_rules=token_rules)
     if not roots:
         return []
 
