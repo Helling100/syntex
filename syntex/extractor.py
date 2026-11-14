@@ -102,7 +102,9 @@ def get_roots(doc, coord_deps=None, token_rules=None, group_rules=None):
                 if not child.is_punct and not child.is_space and child not in extended:
                     extended.append(child)
 
+        print(f"current={current.text!r} pred_components={[c.text for c in pred_components]} extended={[c.text for c in extended]}")
         for comp in extended:
+            print(f"  comp={comp.text!r} children={[c.text for c in comp.children]}")
             for child in comp.children:
                 if child.i in visited:
                     continue
