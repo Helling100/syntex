@@ -150,47 +150,7 @@ def _build_frames_for_doc(doc,
         pred_tokens = [root]
         children = [c for c in root.children if not c.is_punct and not c.is_space]
 
-        # Применяем одиночные правила
-        # Вар 1.
-        '''
-        if token_rules:
-            for child in children:
-                for rule in token_rules:
-                    if rule.matches(child, root):
-                        if child not in pred_tokens:
-                            pred_tokens.append(child)
-                        break
-        '''
-        
-        ######
-        #Вар 2. Применяем правила также для зависимых корня
-        '''
-        if token_rules:
-            changed = True
-            while changed:
-                changed = False
-
-                # Кандидаты: дети любого токена из pred_tokens, ещё не входящие в предикат
-                candidates = []
-                seen = set(pred_tokens)
-                for pt in pred_tokens:
-                    for c in pt.children:
-                        if c.is_punct or c.is_space or c in seen:
-                            continue
-                        if c.dep_ in coord_deps:      # Не рассматриваем сочиненные
-                            continue                        
-                        seen.add(c)
-                        candidates.append(c)
-
-                for child in candidates:
-                    for rule in token_rules:
-                        if rule.matches(child, root):
-                            if child not in pred_tokens:
-                                pred_tokens.append(child)
-                                changed = True
-                            break
-        '''
-        
+        # Применяем одиночные правила      
         if token_rules:
             changed = True
             while changed:
@@ -202,15 +162,15 @@ def _build_frames_for_doc(doc,
                         if c.is_punct or c.is_space or c in seen:
                             continue
                         if c.dep_ in coord_deps:
-                            print(f"SKIP (coord): {c.text!r} dep={c.dep_}")
+                            #print(f"SKIP (coord): {c.text!r} dep={c.dep_}")
                             continue
                         seen.add(c)
                         candidates.append(c)
-                print(f"ITER candidates: {[(c.text, c.dep_) for c in candidates]}")
+                #print(f"ITER candidates: {[(c.text, c.dep_) for c in candidates]}")
                 for child in candidates:
                     for rule in token_rules:
                         if rule.matches(child, root):
-                            print(f"MATCH rule={rule.conditions} child={child.text!r} dep={child.dep_}")
+                            #print(f"MATCH rule={rule.conditions} child={child.text!r} dep={child.dep_}")
                             if child not in pred_tokens:
                                 pred_tokens.append(child)
                                 changed = True
@@ -218,25 +178,19 @@ def _build_frames_for_doc(doc,
 
 
         # Применяем групповые правила
-        '''
-        if group_rules:
-            for group_rule in group_rules:
-                matched = group_rule.apply(children, root)
-                if group_rule.action == 'add':
-                    for token in matched:
-                        if token not in pred_tokens:
-                            pred_tokens.append(token)
-                elif group_rule.action == 'remove':
-                    for token in matched:
-                        if token in pred_tokens:
-                            pred_tokens.remove(token)
-        '''
-        
         if group_rules:
             for group_rule in group_rules:
                 matched = group_rule.apply(children, root)
                 if matched:
-                    print(f"GROUP matched: {[t.text for t in matched]} action={group_rule.action}")
+                    #print(f"GROUP matched: {[t.text for t in matched]} action={group_rule.action}")
+                    if group_rule.action == 'add':
+                        for token in matched:
+                            if token not in pred_tokens:
+                                pred_tokens.append(token)
+                    elif group_rule.action == 'remove':
+                        for token in matched:
+                            if token in pred_tokens:
+                                pred_tokens.remove(token)
 
 
         pred_tokens.sort(key=lambda t: t.i)
