@@ -12,6 +12,33 @@ def collect_subtree(token):
         nodes.extend(collect_subtree(child))
     return nodes
 
+
+def _build_pred_tokens(root, token_rules, coord_deps):
+    """Единая сборка pred_tokens для корня. Используется и в get_roots, и в _build_frames_for_doc."""
+    pred = [root]
+    if not token_rules:
+        return pred
+    changed = True
+    while changed:
+        changed = False
+        seen = set(pred)
+        candidates = []
+        for pt in pred:
+            for c in pt.children:
+                if c.is_punct or c.is_space or c in seen:
+                    continue
+                if c.dep_ in coord_deps:
+                    continue
+                seen.add(c)
+                candidates.append(c)
+        for c in candidates:
+            for rule in token_rules:
+                if rule.matches(c, pred):
+                    pred.append(c)
+                    changed = True
+                    break
+    return pred
+
 ####
 # Вар 1.
 '''
@@ -46,7 +73,7 @@ def get_roots(doc, coord_deps=None):
 '''
 
 #Вар 2.
-def get_roots(doc, coord_deps=None, token_rules=None):
+def get_roots(doc, coord_deps=None, token_rules=None, group_rules=None):
     if coord_deps is None:
         coord_deps = ['conj', 'parataxis']
 
@@ -60,7 +87,7 @@ def get_roots(doc, coord_deps=None, token_rules=None):
     if root is None:
         return [], {}
 
-
+    '''
     def pred_tokens_for(r):
         pred = [r]
         if not token_rules:
@@ -80,11 +107,34 @@ def get_roots(doc, coord_deps=None, token_rules=None):
                     candidates.append(c)
             for c in candidates:
                 for rule in token_rules:
-                    if rule.matches(c, r):
+#                    if rule.matches(c, r):
+                    if rule.matches(c, pred): # <==
                         pred.append(c)
                         changed = True
                         break
         return pred
+    '''
+    '''
+    def pred_tokens_for(r):
+        return _build_pred_tokens(r, token_rules, coord_deps)
+    '''
+    
+    def pred_tokens_for(r):
+            pred = _build_pred_tokens(r, token_rules, coord_deps)
+            if group_rules:
+                children = [c for c in r.children if not c.is_punct and not c.is_space]
+                for group_rule in group_rules:
+                    matched = group_rule.apply(children, r, pred_tokens=pred)
+                    if matched:
+                        if group_rule.action == 'add':
+                            for token in matched:
+                                if token not in pred:
+                                    pred.append(token)
+                        elif group_rule.action == 'remove':
+                            for token in matched:
+                                if token in pred:
+                                    pred.remove(token)
+            return pred
 
 
     roots = [root]
@@ -126,7 +176,7 @@ def _build_frames_for_doc(doc,
     if coord_deps is None:
         coord_deps = ['conj', 'parataxis']
 
-    roots, parent_map = get_roots(doc, coord_deps, token_rules=token_rules)
+    roots, parent_map = get_roots(doc, coord_deps, token_rules=token_rules, group_rules=group_rules)
     if not roots:
         return []
 
@@ -169,7 +219,9 @@ def _build_frames_for_doc(doc,
                 #print(f"ITER candidates: {[(c.text, c.dep_) for c in candidates]}")
                 for child in candidates:
                     for rule in token_rules:
-                        if rule.matches(child, root):
+                        #if rule.matches(child, root):
+                        #if any(rule.matches(child, pt) for pt in pred_tokens): # для любого слова, вошедшего в состав предиката
+                        if rule.matches(child, pred_tokens):
                             #print(f"MATCH rule={rule.conditions} child={child.text!r} dep={child.dep_}")
                             if child not in pred_tokens:
                                 pred_tokens.append(child)
@@ -180,7 +232,7 @@ def _build_frames_for_doc(doc,
         # Применяем групповые правила
         if group_rules:
             for group_rule in group_rules:
-                matched = group_rule.apply(children, root)
+                matched = group_rule.apply(children, root, pred_tokens=pred_tokens)
                 if matched:
                     #print(f"GROUP matched: {[t.text for t in matched]} action={group_rule.action}")
                     if group_rule.action == 'add':
