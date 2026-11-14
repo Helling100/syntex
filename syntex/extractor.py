@@ -223,8 +223,13 @@ def _build_frames_for_doc(doc,
         arguments = []
  
         def collect_arguments(node):
+            if node in roots and node is not root: # это корень другого фрейма — его аргументы соберет свой фрейм
+                return            
+                
             if node in pred_tokens:
                 for child in node.children:
+                    #if child.dep_ in coord_deps:   # ← не идем в сочиненные
+                    #    continue
                     collect_arguments(child)
                 return
 
